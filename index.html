@@ -1308,10 +1308,12 @@ footer code{font-family:"IBM Plex Mono",monospace;}
     }).filter(Boolean);
 
     if (!clean.length) { flash("No usable stops in that " + source.kind + ".", "bad"); return false; }
-    var current = realLegs().length;
-    if (!isExample && current &&
-        !confirm("Replace the current " + current + " stop" + (current === 1 ? "" : "s") +
-                 " with " + clean.length + " from this " + source.kind + "?")) return false;
+
+    // No confirm() here. A link import runs during page load, and mobile Safari
+    // suppresses dialogs raised then -- a suppressed confirm() returns false, so
+    // the import would silently abort and the device would keep its old trip.
+    // Scanning a link is explicit intent: apply it, and offer Undo instead.
+    var prev = { legs: legs.slice(), units: units, isExample: isExample };
 
     legs = clean;
     isExample = false;
@@ -1319,9 +1321,37 @@ footer code{font-family:"IBM Plex Mono",monospace;}
     syncUnitButtons();
     fcCache = {}; fcErr = {}; normErr = {};
     save(); renderEditor(); render(); scheduleRefresh(0);
-    flash("Imported " + clean.length + " stop" + (clean.length === 1 ? "" : "s") + " from " + source.label +
-          (dropped ? " — skipped " + dropped + " unusable entr" + (dropped === 1 ? "y" : "ies") + "." : "."), "good");
+    flashUndo("Loaded " + clean.length + " stop" + (clean.length === 1 ? "" : "s") + " from " + source.label +
+          (dropped ? " — skipped " + dropped + " unusable entr" + (dropped === 1 ? "y" : "ies") + "." : "."),
+          prev);
     return true;
+  }
+
+  // A replaced itinerary is recoverable for a while, which is what makes skipping
+  // the confirmation safe.
+  function flashUndo(msg, prev){
+    clearTimeout(flashTimer);
+    $flash.className = "notice good";
+    $flash.textContent = msg + " ";
+    if (prev.legs.length) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "btn quiet";
+      b.textContent = "Undo";
+      b.style.marginLeft = "auto";
+      b.addEventListener("click", function () {
+        legs = prev.legs;
+        units = prev.units;
+        isExample = prev.isExample;
+        syncUnitButtons();
+        fcCache = {}; fcErr = {}; normErr = {};
+        save(); renderEditor(); render(); scheduleRefresh(0);
+        flash("Put the previous itinerary back.", "good");
+      });
+      $flash.appendChild(b);
+    }
+    $flash.hidden = false;
+    flashTimer = setTimeout(function () { $flash.hidden = true; }, 25000);
   }
 
   function importTrip(file){
