@@ -247,6 +247,21 @@ footer code{font-family:"IBM Plex Mono",monospace;}
 
   <section>
     <div class="sec-head">
+      <h2>Forecast</h2>
+      <div class="tools">
+        <span class="mono" id="status" aria-live="polite" style="font-size:12px;color:var(--ink-3)"></span>
+        <button class="btn primary" type="button" id="refresh">Refresh</button>
+      </div>
+    </div>
+    <div class="legend" id="legend" hidden>
+      <span class="lg"><i class="sw sw-fc"></i> <b>Forecast</b> &mdash; from the live model run</span>
+      <span class="lg"><i class="sw sw-nm"></i> <b>Climate normal</b> &mdash; a 10-year average for that date, used past the 16-day horizon</span>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
       <h2>
         <button type="button" class="disclosure" id="toggle-itin" aria-expanded="true" aria-controls="itin-body">
           <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
@@ -268,21 +283,6 @@ footer code{font-family:"IBM Plex Mono",monospace;}
       <div class="notice" id="notice" hidden></div>
     </div>
     <div class="notice" id="flash" role="status" hidden></div>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <h2>Forecast</h2>
-      <div class="tools">
-        <span class="mono" id="status" aria-live="polite" style="font-size:12px;color:var(--ink-3)"></span>
-        <button class="btn primary" type="button" id="refresh">Refresh</button>
-      </div>
-    </div>
-    <div class="legend" id="legend" hidden>
-      <span class="lg"><i class="sw sw-fc"></i> <b>Forecast</b> &mdash; from the live model run</span>
-      <span class="lg"><i class="sw sw-nm"></i> <b>Climate normal</b> &mdash; a 10-year average for that date, used past the 16-day horizon</span>
-    </div>
-    <div class="cards" id="cards"></div>
   </section>
 
   <footer>
@@ -309,7 +309,7 @@ footer code{font-family:"IBM Plex Mono",monospace;}
   // otherwise, so a device -- an iOS home-screen app especially -- can keep
   // serving a stale copy after a push. Compare the baked-in build against
   // version.json and, if it moved, come back on a URL the cache has never seen.
-  var BUILD = "20260918-161113";
+  var BUILD = "20260918-161248";
   fetch("version.json", { cache: "no-store" })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (v) {
