@@ -1266,6 +1266,42 @@ footer code{font-family:"IBM Plex Mono",monospace;}
       typeof p.longitude === "number" && isFinite(p.longitude) && Math.abs(p.longitude) <= 180;
   }
 
+  var BACKUP_KEY = "multiweather.replaced";
+  function readBackup(){
+    try {
+      var raw = localStorage.getItem(BACKUP_KEY);
+      if (!raw) return null;
+      var b = JSON.parse(raw);
+      return (b && Array.isArray(b.legs) && b.legs.length) ? b : null;
+    } catch (e) { return null; }
+  }
+  function clearBackup(){ try { localStorage.removeItem(BACKUP_KEY); } catch (e) {} }
+
+  // Surfaced on the load AFTER a replacement, so the previous itinerary is still
+  // reachable once the in-page Undo is gone.
+  function offerRestore(){
+    var b = readBackup();
+    if (!b) return;
+    clearTimeout(flashTimer);
+    $flash.className = "notice";
+    $flash.textContent = "A newer published itinerary replaced the " + b.legs.length +
+      " stop" + (b.legs.length === 1 ? "" : "s") + " that were here. ";
+    var restore = document.createElement("button");
+    restore.type = "button"; restore.className = "btn quiet"; restore.textContent = "Put mine back";
+    restore.style.marginLeft = "auto";
+    restore.addEventListener("click", function () {
+      var prevUnits = b.units;
+      clearBackup();
+      adoptTrip({ legs: b.legs, units: prevUnits }, { kind: "backup", label: "your previous itinerary" });
+    });
+    var dismiss = document.createElement("button");
+    dismiss.type = "button"; dismiss.className = "btn quiet"; dismiss.textContent = "Dismiss";
+    dismiss.addEventListener("click", function () { clearBackup(); $flash.hidden = true; });
+    $flash.appendChild(restore);
+    $flash.appendChild(dismiss);
+    $flash.hidden = false;
+  }
+
   // Shared by file import and the published itinerary: validate, apply, offer undo.
   function adoptTrip(data, source){
     if (!data || !Array.isArray(data.legs)) {
@@ -1291,6 +1327,17 @@ footer code{font-family:"IBM Plex Mono",monospace;}
     // the import would silently abort and the device would keep its old trip.
     // Scanning a link is explicit intent: apply it, and offer Undo instead.
     var prev = { legs: legs.slice(), units: units, isExample: isExample };
+
+    // Persist what is being replaced. Undo used to live only in memory, so a
+    // reload made a replaced itinerary unrecoverable.
+    if (prev.legs.length && !prev.isExample) {
+      try {
+        localStorage.setItem(BACKUP_KEY, JSON.stringify({
+          at: Date.now(), units: prev.units,
+          legs: prev.legs.map(function (l) { return { query: l.query, place: l.place, start: l.start, end: l.end }; })
+        }));
+      } catch (e) { /* not persisted */ }
+    }
 
     legs = clean;
     isExample = false;
@@ -1504,6 +1551,7 @@ footer code{font-family:"IBM Plex Mono",monospace;}
       // and offers undo.
       if (!hadSavedTrip) adoptPublished(pub, true);
       else if (String(pub.published) !== publishedStamp()) adoptPublished(pub, false);
+      else offerRestore();
     } else if (!hadSavedTrip) {
       seedExample();
       renderEditor();
