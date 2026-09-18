@@ -606,11 +606,18 @@ footer code{font-family:"IBM Plex Mono",monospace;}
   // picker reads "Quebec, Quebec" and looks like you are choosing the province.
   // English already has the convention for a city sharing its region's name --
   // Quebec City, New York City, Panama City -- so say it that way.
+  // Deriving this from "name matches its region" over-fires: Madrid, Sao Paulo,
+  // Tokyo and Buenos Aires all match that shape and English appends nothing.
+  // It is a short list of exonyms, not a rule.
+  var CITY_SUFFIX = {
+    "quebec|canada": 1, "new york|united states": 1,
+    "panama|panama": 1, "guatemala|guatemala": 1, "kuwait|kuwait": 1
+  };
   function displayName(p){
     if (!p) return "";
     var n = p.name || "";
-    if (/^PPL/.test(p.feature_code || "") && p.admin1 &&
-        fold(n) === fold(p.admin1) && !/\bcity\b/i.test(n)) {
+    if (/\bcity\b/i.test(n)) return n;
+    if (/^PPL/.test(p.feature_code || "") && CITY_SUFFIX[fold(n) + "|" + fold(p.country || "")]) {
       return n + " City";
     }
     return n;
@@ -1463,18 +1470,31 @@ footer code{font-family:"IBM Plex Mono",monospace;}
 
   // A share link opened while the app is already on screen changes only the hash,
   // which does not reload the page -- so catch it here too, not just at boot.
-  window.addEventListener("hashchange", function () { tripFromHash(); });
+  window.addEventListener("hashchange", function () { tripFromHash(false); });
 
   // A trip arriving in the URL hash, e.g. from the QR code.
-  function tripFromHash(){
+  //
+  // The token deliberately STAYS in the URL. An iOS "Add to Home Screen" shortcut
+  // saves the address it was created from, and a standalone web app can be handed
+  // a fresh, empty storage context -- so without the token in the URL every launch
+  // would find nothing saved and fall back to the example trip. Instead of
+  // stripping it, remember which token this device already applied: the same one
+  // arriving again at launch is ignored, so edits made here are never clobbered.
+  var APPLIED_KEY = "multiweather.appliedToken";
+  function appliedToken(){ try { return localStorage.getItem(APPLIED_KEY); } catch (e) { return null; } }
+
+  function tripFromHash(atBoot, hadSavedTrip){
     var m = /[#&]t=([A-Za-z0-9\-_]+)/.exec(location.hash || "");
     if (!m) return false;
+    var token = m[1];
+    if (atBoot && hadSavedTrip && token === appliedToken()) return false;   // already live here
+
     var data = null;
-    try { data = decodeTrip(m[1]); } catch (e) { data = null; }
-    // Drop the token either way, so a reload does not re-import over later edits.
-    history.replaceState(null, "", location.pathname + location.search);
+    try { data = decodeTrip(token); } catch (e) { data = null; }
     if (!data) { flash("That shared link is damaged — nothing was changed.", "bad"); return false; }
-    return adoptTrip(data, { kind: "link", label: "a shared link" });
+    var ok = adoptTrip(data, { kind: "link", label: "a shared link" });
+    if (ok) { try { localStorage.setItem(APPLIED_KEY, token); } catch (e) { /* not persisted */ } }
+    return ok;
   }
 
   // Drag a saved trip anywhere onto the page to import it.
@@ -1595,10 +1615,11 @@ footer code{font-family:"IBM Plex Mono",monospace;}
 
   /* ---------- boot ---------- */
   loadNormals();
-  if (!load()) seedExample();
+  var hadSavedTrip = load();
+  if (!hadSavedTrip) seedExample();
   setUnits(units);
   renderEditor();
-  tripFromHash();
+  tripFromHash(true, hadSavedTrip);
   var wasCollapsed = null;
   try { wasCollapsed = localStorage.getItem(COLLAPSE_KEY); } catch (e) { /* default open */ }
   // Never boot collapsed with nothing in it -- there would be no way back in.
