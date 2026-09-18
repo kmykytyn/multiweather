@@ -1,0 +1,76 @@
+{
+  "app": "trip-forecast-board",
+  "version": 1,
+  "published": "2026-09-18T15:59:21-04:00",
+  "units": "imperial",
+  "legs": [
+    {
+      "query": "charlotte",
+      "start": "2026-09-27",
+      "end": "2026-09-27",
+      "place": {
+        "id": 4460243,
+        "name": "Charlotte",
+        "admin1": "North Carolina",
+        "country": "United States",
+        "country_code": "US",
+        "latitude": 35.22709,
+        "longitude": -80.84313,
+        "population": 911311,
+        "feature_code": "PPLA2",
+        "timezone": "America/New_York"
+      }
+    },
+    {
+      "query": "Quebec City",
+      "start": "2026-09-24",
+      "end": "",
+      "place": {
+        "id": 6325494,
+        "name": "Québec",
+        "admin1": "Quebec",
+        "country": "Canada",
+        "country_code": "CA",
+        "latitude": 46.81228,
+        "longitude": -71.21454,
+        "population": 531902,
+        "feature_code": "PPLA",
+        "timezone": "America/Toronto"
+      }
+    },
+    {
+      "query": "Reykjavik",
+      "start": "2026-09-27",
+      "end": "2026-09-29",
+      "place": {
+        "id": 3413829,
+        "name": "Reykjavik",
+        "admin1": "Capital Region",
+        "country": "Iceland",
+        "country_code": "IS",
+        "latitude": 64.13548,
+        "longitude": -21.89541,
+        "population": 118918,
+        "feature_code": "PPLC",
+        "timezone": "Atlantic/Reykjavik"
+      }
+    },
+    {
+      "query": "Lisbon",
+      "start": "2026-10-12",
+      "end": "",
+      "place": {
+        "id": 2267057,
+        "name": "Lisbon",
+        "admin1": "Lisbon District",
+        "country": "Portugal",
+        "country_code": "PT",
+        "latitude": 38.72509,
+        "longitude": -9.1498,
+        "population": 517802,
+        "feature_code": "PPLC",
+        "timezone": "Europe/Lisbon"
+      }
+    }
+  ]
+}
