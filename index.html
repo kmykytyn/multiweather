@@ -70,7 +70,6 @@ h1,h2,h3{font-family:"Archivo", system-ui, sans-serif; margin:0; text-wrap:balan
 
 .masthead{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; justify-content:space-between; border-bottom:2px solid var(--ink); padding-bottom:14px;}
 .masthead h1{font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.05;}
-.masthead p{margin:6px 0 0; color:var(--ink-2); max-width:58ch; font-size:14px;}
 .unit-switch{display:inline-flex; border:1px solid var(--line-strong); border-radius:999px; overflow:hidden; background:var(--surface);}
 .unit-switch button{appearance:none; border:0; background:transparent; cursor:pointer; padding:7px 15px;
   font:600 12px/1 "IBM Plex Mono", monospace; letter-spacing:.06em; color:var(--ink-2);}
@@ -206,7 +205,7 @@ button.btn.quiet:hover{background:var(--surface-2); color:var(--ink);}
 
 .empty{border:1px dashed var(--line-strong); border-radius:var(--radius); padding:34px 20px; text-align:center; color:var(--ink-2); font-size:14px;}
 
-footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--line); color:var(--ink-3); font-size:12px; line-height:1.7;}
+footer{margin-top:32px; padding-top:14px; border-top:1px solid var(--line); color:var(--ink-3); font-size:12px;}
 footer a{color:var(--ink-2);}
 footer code{font-family:"IBM Plex Mono",monospace;}
 
@@ -250,7 +249,6 @@ footer code{font-family:"IBM Plex Mono",monospace;}
   <div class="masthead">
     <div>
       <h1>Trip Forecast Board</h1>
-      <p>Enter each city and the dates you&rsquo;ll be there. Every stop is matched to its own daily forecast &mdash; and any date past the 16-day horizon falls back to a ten-year climate normal for that spot on the calendar.</p>
     </div>
     <div class="unit-switch" role="group" aria-label="Units">
       <button type="button" id="u-imp" aria-pressed="true">&deg;F &middot; MPH</button>
@@ -301,11 +299,7 @@ footer code{font-family:"IBM Plex Mono",monospace;}
   </section>
 
   <footer>
-    Forecast and place data from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) &mdash; free, no API key.
-    Daily model coverage runs <code>today&nbsp;&minus;5</code> through <code>today&nbsp;+15</code>. A date one or two days past the edge borrows the nearest covered day; anything further is answered instead by a
-    <b>ten-year climate normal</b> &mdash; the mean of every observed day within &plusmn;3 days of that calendar date across the last ten years, from the ERA5 reanalysis archive. Normals describe what the place is
-    usually like, not what the weather will do; they are marked with a blue rail and never counted as a forecast.
-    Temperatures are fetched in metric and converted in the page, so switching units costs no extra requests. Your itinerary is saved in this browser only &mdash; each device and browser keeps its own, and clearing site data loses it, so use <b>Export</b> to keep a copy you can reload here or carry to another device.
+    Weather and place data by <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0).
   </footer>
 </div>
 
@@ -492,10 +486,7 @@ footer code{font-family:"IBM Plex Mono",monospace;}
   /* ---------- API ---------- */
   function rawGeocode(q){
     var url = GEO_URL + "?name=" + encodeURIComponent(q) + "&count=8&language=en&format=json";
-    return fetch(url).then(function (r) {
-      if (!r.ok) throw new Error("Place lookup failed (" + r.status + ")");
-      return r.json();
-    }).then(function (j) { return j.results || []; });
+    return apiFetch(url, "Place lookup").then(function (j) { return j.results || []; });
   }
 
   // The geocoder prefix-matches the whole string against the place's own name, so
@@ -599,10 +590,7 @@ footer code{font-family:"IBM Plex Mono",monospace;}
       "apparent_temperature_min","precipitation_sum","precipitation_probability_max","wind_speed_10m_max","uv_index_max"];
     var url = FC_URL + "?latitude=" + p.latitude + "&longitude=" + p.longitude +
       "&daily=" + daily.join(",") + "&timezone=auto&past_days=" + PAST_DAYS + "&forecast_days=" + FUTURE_DAYS;
-    return fetch(url).then(function (r) {
-      if (!r.ok) throw new Error("Forecast request failed (" + r.status + ")");
-      return r.json();
-    }).then(function (j) {
+    return apiFetch(url, "Forecast").then(function (j) {
       if (!j.daily || !j.daily.time) throw new Error("Forecast response had no daily data");
       fcCache[key] = j.daily;
       delete fcErr[key];
@@ -630,17 +618,20 @@ footer code{font-family:"IBM Plex Mono",monospace;}
   }
 
   // 429 means the shared free-tier budget is momentarily spent; back off and retry
-  // rather than surfacing an error for something that clears in seconds.
-  function archiveFetch(url, retries){
+  // rather than surfacing an error for something that clears in seconds. Every
+  // Open-Meteo call goes through here -- a rate limit is not specific to one API.
+  function apiFetch(url, what, retries){
+    if (retries == null) retries = 3;
     return fetch(url).then(function (r) {
       if (r.status === 429) {
-        if (retries > 0) return delay(1500 * (3 - retries)).then(function () { return archiveFetch(url, retries - 1); });
+        if (retries > 0) return delay(900 * (4 - retries)).then(function () { return apiFetch(url, what, retries - 1); });
         throw new Error("Open-Meteo is rate-limiting right now — press Refresh in a minute");
       }
-      if (!r.ok) throw new Error("Climate archive request failed (" + r.status + ")");
+      if (!r.ok) throw new Error(what + " request failed (" + r.status + ")");
       return r.json();
     });
   }
+  function archiveFetch(url, retries){ return apiFetch(url, "Climate archive", retries); }
 
   var NORM_STORE = "multiweather.normals.v1";
   var NORM_TTL = 30 * 86400000;   // normals barely move; a month-old cache is fine
@@ -937,7 +928,7 @@ footer code{font-family:"IBM Plex Mono",monospace;}
     if (!pending.length) { $status.textContent = ""; render(); return; }
     $status.textContent = "Loading…";
 
-    var work = legs.map(function (leg) {
+    var work = function (leg) {
       if (!leg.query.trim() || !leg.start) return Promise.resolve();
       var step = leg.place
         ? Promise.resolve(leg.place)
@@ -948,9 +939,9 @@ footer code{font-family:"IBM Plex Mono",monospace;}
           });
       return step.then(function (p) { leg.error = null; return fetchForecast(p); })
                  .catch(function (e) { leg.error = e.message || "Lookup failed"; });
-    });
+    };
 
-    Promise.all(work).then(function () {
+    pooled(legs, 3, work).then(function () {
       if (mine !== runToken) return;
       // Forecasts are in: paint them, then fill any date the model could not reach
       // with a climate normal.
