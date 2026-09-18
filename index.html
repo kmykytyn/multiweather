@@ -1,0 +1,1433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#12557E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Trip Board">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<title>Trip Forecast Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#F2F5F7; --surface:#FFFFFF; --surface-2:#E7EDF2;
+  --ink:#15202A; --ink-2:#4C6072; --ink-3:#7B8C9B;
+  --line:#D5DEE5; --line-strong:#B6C4CF;
+  --accent:#12557E; --accent-soft:#E0EDF6; --on-accent:#FFFFFF;
+  --alert:#B4441F; --alert-soft:#FAE7DF;
+  --watch:#8A6A12; --watch-soft:#F7EFD9;
+  --calm:#2C6E5B;
+  --shadow:0 1px 2px rgba(21,32,42,.05), 0 10px 26px -14px rgba(21,32,42,.30);
+  --radius:10px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0C1319; --surface:#161F27; --surface-2:#1E2932;
+    --ink:#DFE8EF; --ink-2:#9BAEBE; --ink-3:#6C808E;
+    --line:#26323C; --line-strong:#3A4954;
+    --accent:#6FB3DC; --accent-soft:#15303F; --on-accent:#0C1319;
+    --alert:#EB8B63; --alert-soft:#37211A;
+    --watch:#D6B45E; --watch-soft:#302A17;
+    --calm:#6FBFA3;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -16px rgba(0,0,0,.7);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0C1319; --surface:#161F27; --surface-2:#1E2932;
+  --ink:#DFE8EF; --ink-2:#9BAEBE; --ink-3:#6C808E;
+  --line:#26323C; --line-strong:#3A4954;
+  --accent:#6FB3DC; --accent-soft:#15303F; --on-accent:#0C1319;
+  --alert:#EB8B63; --alert-soft:#37211A;
+  --watch:#D6B45E; --watch-soft:#302A17;
+  --calm:#6FBFA3;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 12px 28px -16px rgba(0,0,0,.7);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+/* A `display` rule of our own outranks the UA sheet's [hidden]{display:none},
+   so restate it -- otherwise a hidden .notice still paints an empty bar. */
+[hidden]{display:none !important;}
+html,body{margin:0}
+body{
+  background:var(--ground); color:var(--ink);
+  font:15px/1.55 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px; margin:0 auto;
+  padding-inline:calc(18px + env(safe-area-inset-left,0px)) calc(18px + env(safe-area-inset-right,0px));
+  padding-block:calc(28px + env(safe-area-inset-top,0px)) calc(56px + env(safe-area-inset-bottom,0px));}
+h1,h2,h3{font-family:"Archivo", system-ui, sans-serif; margin:0; text-wrap:balance; letter-spacing:-.015em;}
+.mono{font-family:"IBM Plex Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+
+.masthead{display:flex; flex-wrap:wrap; gap:18px; align-items:flex-end; justify-content:space-between; border-bottom:2px solid var(--ink); padding-bottom:14px;}
+.masthead h1{font-size:clamp(26px,4.5vw,38px); font-weight:700; line-height:1.05;}
+.masthead p{margin:6px 0 0; color:var(--ink-2); max-width:58ch; font-size:14px;}
+.unit-switch{display:inline-flex; border:1px solid var(--line-strong); border-radius:999px; overflow:hidden; background:var(--surface);}
+.unit-switch button{appearance:none; border:0; background:transparent; cursor:pointer; padding:7px 15px;
+  font:600 12px/1 "IBM Plex Mono", monospace; letter-spacing:.06em; color:var(--ink-2);}
+.unit-switch button[aria-pressed="true"]{background:var(--ink); color:var(--ground);}
+
+.strip{display:flex; flex-wrap:wrap; margin-top:18px; border:1px solid var(--line); border-radius:var(--radius); background:var(--surface); overflow:hidden;}
+.strip .cell{flex:1 1 160px; padding:12px 16px; border-right:1px solid var(--line); min-width:0;}
+.strip .cell:last-child{border-right:0;}
+.strip .k{font:600 10px/1 "IBM Plex Mono", monospace; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);}
+.strip .v{margin-top:6px; font-family:"Archivo",sans-serif; font-weight:600; font-size:17px; font-variant-numeric:tabular-nums;}
+.strip .v small{font:400 13px/1.3 "IBM Plex Sans",sans-serif; color:var(--ink-2);}
+.strip .cell.flag .v{color:var(--alert);}
+
+section{margin-top:34px;}
+.sec-head{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:12px;}
+.sec-head h2{font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-3); font-family:"IBM Plex Mono",monospace;}
+.sec-head .tools{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+.disclosure{appearance:none; background:none; border:0; margin:0; padding:2px 4px 2px 0; cursor:pointer;
+  display:inline-flex; align-items:center; gap:8px;
+  font:inherit; color:inherit; letter-spacing:inherit; text-transform:inherit;}
+.disclosure:hover{color:var(--ink);}
+.disclosure .chev{width:12px; height:12px; flex:none; transition:transform .15s ease;}
+.disclosure[aria-expanded="false"] .chev{transform:rotate(-90deg);}
+.disclosure .count{font-weight:400; text-transform:none; letter-spacing:.02em; color:var(--ink-3);}
+.disclosure .count:empty{display:none;}
+@media (prefers-reduced-motion: reduce){.disclosure .chev{transition:none;}}
+
+button.btn{appearance:none; cursor:pointer; font:500 13px/1 "IBM Plex Sans",sans-serif;
+  padding:8px 13px; border-radius:7px; border:1px solid var(--line-strong);
+  background:var(--surface); color:var(--ink);}
+button.btn:hover{border-color:var(--ink-3);}
+button.btn.primary{background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:600;}
+button.btn.primary:hover{filter:brightness(1.08);}
+button.btn.quiet{border-color:transparent; background:transparent; color:var(--ink-2);}
+button.btn.quiet:hover{background:var(--surface-2); color:var(--ink);}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+.legs{display:flex; flex-direction:column; gap:8px;}
+.leg{display:grid; gap:10px; align-items:start; background:var(--surface);
+  border:1px solid var(--line); border-radius:var(--radius); padding:10px 12px;
+  grid-template-columns:34px minmax(0,1fr) 150px 150px 34px;}
+.leg .no{font:600 13px/1 "IBM Plex Mono",monospace; color:var(--ink-3); text-align:center; padding-top:22px;}
+.field{position:relative; min-width:0;}
+.field label{display:block; font:600 9px/1 "IBM Plex Mono",monospace; letter-spacing:.11em; text-transform:uppercase; color:var(--ink-3); margin-bottom:4px;}
+.field input{width:100%; padding:7px 9px; border-radius:6px; border:1px solid var(--line-strong);
+  background:var(--ground); color:var(--ink); font:400 14px/1.3 "IBM Plex Sans",sans-serif;}
+.field input[type="date"]{font-family:"IBM Plex Mono",monospace; font-size:13px;}
+.field input::placeholder{color:var(--ink-3);}
+.field .resolved{margin-top:4px; font:400 11px/1.3 "IBM Plex Mono",monospace; color:var(--ink-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.field .resolved.bad{color:var(--alert);}
+.leg .kill{appearance:none; border:1px solid transparent; background:transparent; color:var(--ink-3);
+  width:30px; height:30px; border-radius:6px; cursor:pointer; font-size:17px; line-height:1; justify-self:center; margin-top:18px;}
+.leg .kill:hover{background:var(--alert-soft); color:var(--alert);}
+
+.ac{position:absolute; z-index:20; top:100%; left:0; right:0; margin-top:4px; background:var(--surface);
+  border:1px solid var(--line-strong); border-radius:8px; box-shadow:var(--shadow); overflow-y:auto; max-height:250px;}
+.ac div{padding:8px 10px; cursor:pointer; font-size:13px; border-bottom:1px solid var(--line);}
+.ac div:last-child{border-bottom:0;}
+.ac div:hover,.ac div.on{background:var(--accent-soft);}
+.ac div span{display:block; font:400 11px/1.3 "IBM Plex Mono",monospace; color:var(--ink-3); margin-top:2px;}
+
+.notice{margin-top:12px; padding:9px 12px; border-radius:8px; font-size:13px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink-2); display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+.notice.good{background:var(--accent-soft); border-color:var(--accent); color:var(--accent);}
+.notice.bad{background:var(--alert-soft); border-color:var(--alert); color:var(--alert);}
+/* Overlay is pointer-events:none so it never becomes a drag target itself --
+   that would fire dragleave against the document and make it flicker. */
+.dropzone{position:fixed; inset:0; z-index:100; display:flex; align-items:center; justify-content:center;
+  padding:24px; pointer-events:none;}
+.dropzone::before{content:""; position:absolute; inset:0; background:var(--ground); opacity:.92;}
+.dropzone-inner{position:relative; display:flex; flex-direction:column; align-items:center; gap:8px;
+  border:2px dashed var(--accent); border-radius:16px; background:var(--surface); color:var(--accent);
+  padding:34px 40px; text-align:center; box-shadow:var(--shadow); max-width:min(400px,100%);}
+.dropzone-inner svg{width:38px; height:38px;}
+.dropzone-inner b{font-family:"Archivo",sans-serif; font-size:19px; font-weight:600;}
+.dropzone-inner span{font-size:13px; color:var(--ink-2);}
+.dropzone-inner code{font-family:"IBM Plex Mono",monospace;}
+.vis-hidden{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;}
+
+/* Shown only when the board actually mixes the two kinds of row. */
+.legend{display:flex; flex-wrap:wrap; gap:7px 22px; margin-bottom:12px; padding:10px 13px;
+  border:1px solid var(--line); border-radius:var(--radius); background:var(--surface);
+  font-size:12px; color:var(--ink-2);}
+.legend .lg{display:inline-flex; align-items:center; gap:9px;}
+.legend b{color:var(--ink); font-weight:600;}
+.legend .sw{width:3px; height:17px; border-radius:2px; flex:none;}
+.legend .sw-fc{background:var(--line-strong);}
+.legend .sw-nm{background:var(--accent);}
+.cards{display:flex; flex-direction:column; gap:14px;}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden;}
+.card .bar{height:3px; background:var(--calm);}
+.card.watch .bar{background:var(--watch);}
+.card.alert .bar{background:var(--alert);}
+/* One line per stop: date, then city / region / country. No stop number. */
+.card-head{display:flex; gap:8px; align-items:baseline; padding:9px 14px; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+.card-head .when{font:600 12.5px/1.4 "IBM Plex Mono",monospace; color:var(--ink-2); white-space:nowrap; font-variant-numeric:tabular-nums;}
+.card-head .dot{color:var(--line-strong);}
+.card-head h3{font-size:15px; font-weight:600; min-width:0;}
+
+.day{display:grid; gap:12px; padding:9px 14px; border-bottom:1px solid var(--line); align-items:center;
+  grid-template-columns:86px 30px minmax(0,1fr) 132px;}
+.day:last-child{border-bottom:0;}
+.day .date{font:500 12.5px/1.4 "IBM Plex Mono",monospace; color:var(--ink); white-space:nowrap; font-variant-numeric:tabular-nums;}
+.day .ico{color:var(--ink-2); display:flex;}
+.day .ico svg{width:26px; height:26px;}
+.cond{font-size:14px; font-weight:500;}
+.metrics{display:flex; flex-wrap:wrap; gap:3px 14px; margin-top:5px; font:400 12px/1.5 "IBM Plex Mono",monospace; color:var(--ink-2); font-variant-numeric:tabular-nums;}
+.metrics i{font-style:normal; color:var(--ink-3);}
+.metrics span{white-space:nowrap;}   /* keep each label with its value */
+.temps{text-align:right; font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;}
+.temps .hi{font-size:20px; font-weight:600;}
+.temps .lo{font-size:13px; color:var(--ink-3); margin-left:5px;}
+.range{margin-top:5px; height:5px; border-radius:3px; background:var(--surface-2); position:relative; overflow:hidden;}
+.range i{position:absolute; top:0; bottom:0; border-radius:3px;}
+
+.chip{display:inline-flex; align-items:center; margin-top:6px; padding:3px 8px; border-radius:999px;
+  font:600 10px/1.5 "IBM Plex Mono",monospace; letter-spacing:.05em; text-transform:uppercase;}
+.chip.sub{background:var(--watch-soft); color:var(--watch);}
+.chip.out{background:var(--alert-soft); color:var(--alert);}
+.chip.norm{background:var(--accent-soft); color:var(--accent); cursor:help;}
+/* A normal is a different kind of answer from a forecast, not a degraded one:
+   mark it with a hatched rail rather than a warning colour. */
+.day.normal-row{
+  border-left:3px solid var(--accent);
+  background:linear-gradient(90deg, var(--accent-soft) 0%, transparent 40%);
+  padding-left:13px;
+}
+.day.normal-row .cond{color:var(--ink-2);}
+.day.pending-row{color:var(--ink-3);}
+.day.pending-row .cond{font-weight:400; font-size:13px; color:var(--ink-3);}
+.card-msg{padding:14px 16px; font-size:13px; color:var(--ink-2);}
+.card-msg.bad{color:var(--alert);}
+
+.empty{border:1px dashed var(--line-strong); border-radius:var(--radius); padding:34px 20px; text-align:center; color:var(--ink-2); font-size:14px;}
+
+footer{margin-top:40px; padding-top:16px; border-top:1px solid var(--line); color:var(--ink-3); font-size:12px; line-height:1.7;}
+footer a{color:var(--ink-2);}
+footer code{font-family:"IBM Plex Mono",monospace;}
+
+@media (max-width:760px){
+  /* iOS Safari zooms the page in on any focused input under 16px, and never
+     zooms back out. 16px is the threshold, not a preference. */
+  .field input, .field input[type="date"]{font-size:16px;}
+  .card-head{gap:1px 8px;}
+  .card-head .dot{display:none;}          /* the line wraps here; no dangling separator */
+  .card-head .when{flex-basis:100%;}
+  .strip{display:grid; grid-template-columns:1fr 1fr;}
+  .strip .cell{border-bottom:1px solid var(--line);}
+  .strip .cell:nth-child(2n){border-right:0;}
+  .strip .cell:last-child{grid-column:1 / -1; border-bottom:0;}
+  .leg{grid-template-columns:28px minmax(0,1fr) 34px; grid-template-areas:"no city kill" ". start start" ". end end";}
+  .leg .no{grid-area:no}
+  .leg .f-city{grid-area:city}
+  .leg .f-start{grid-area:start}
+  .leg .f-end{grid-area:end}
+  .leg .kill{grid-area:kill}
+  .day{grid-template-columns:86px 26px minmax(0,1fr);}
+  .day .temps{grid-column:1 / -1; text-align:left;}
+  .day .temps .range{max-width:240px;}
+  .card-head .when{text-align:left;}
+}
+/* Touch: fingers need ~44px, and there is no hover to reveal affordances. */
+@media (pointer:coarse){
+  .unit-switch button{padding:12px 17px;}
+  button.btn{padding:12px 15px;}
+  .disclosure{padding:11px 6px 11px 0;}
+  .leg .kill{width:44px; height:44px; margin-top:12px;}
+  .ac div{padding:13px 11px;}
+  .card-head, .day{padding-block:12px;}
+}
+@media (prefers-reduced-motion: reduce){*{animation:none !important; transition:none !important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div>
+      <h1>Trip Forecast Board</h1>
+      <p>Enter each city and the dates you&rsquo;ll be there. Every stop is matched to its own daily forecast &mdash; and any date past the 16-day horizon falls back to a ten-year climate normal for that spot on the calendar.</p>
+    </div>
+    <div class="unit-switch" role="group" aria-label="Units">
+      <button type="button" id="u-imp" aria-pressed="true">&deg;F &middot; MPH</button>
+      <button type="button" id="u-met" aria-pressed="false">&deg;C &middot; KM/H</button>
+    </div>
+  </div>
+
+  <div class="strip" id="strip"></div>
+
+  <section>
+    <div class="sec-head">
+      <h2>
+        <button type="button" class="disclosure" id="toggle-itin" aria-expanded="true" aria-controls="itin-body">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          <span>Itinerary</span>
+          <span class="count" id="itin-count"></span>
+        </button>
+      </h2>
+      <div class="tools" id="itin-tools">
+        <button class="btn quiet" type="button" id="sort">Sort by date</button>
+        <button class="btn quiet" type="button" id="export">Export&hellip;</button>
+        <button class="btn quiet" type="button" id="import" title="Import a saved trip &mdash; or drag the file anywhere onto this page">Import&hellip;</button>
+        <input type="file" id="file" accept="application/json,.json" class="vis-hidden" tabindex="-1" aria-hidden="true">
+        <button class="btn quiet" type="button" id="clear">Clear all</button>
+        <button class="btn" type="button" id="add">Add stop</button>
+      </div>
+    </div>
+    <div id="itin-body">
+      <div class="legs" id="legs"></div>
+      <div class="notice" id="notice" hidden></div>
+    </div>
+    <div class="notice" id="flash" role="status" hidden></div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <h2>Forecast</h2>
+      <div class="tools">
+        <span class="mono" id="status" aria-live="polite" style="font-size:12px;color:var(--ink-3)"></span>
+        <button class="btn primary" type="button" id="refresh">Refresh</button>
+      </div>
+    </div>
+    <div class="legend" id="legend" hidden>
+      <span class="lg"><i class="sw sw-fc"></i> <b>Forecast</b> &mdash; from the live model run</span>
+      <span class="lg"><i class="sw sw-nm"></i> <b>Climate normal</b> &mdash; a 10-year average for that date, used past the 16-day horizon</span>
+    </div>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <footer>
+    Forecast and place data from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> (CC BY 4.0) &mdash; free, no API key.
+    Daily model coverage runs <code>today&nbsp;&minus;5</code> through <code>today&nbsp;+15</code>. A date one or two days past the edge borrows the nearest covered day; anything further is answered instead by a
+    <b>ten-year climate normal</b> &mdash; the mean of every observed day within &plusmn;3 days of that calendar date across the last ten years, from the ERA5 reanalysis archive. Normals describe what the place is
+    usually like, not what the weather will do; they are marked with a blue rail and never counted as a forecast.
+    Temperatures are fetched in metric and converted in the page, so switching units costs no extra requests. Your itinerary is saved in this browser only &mdash; each device and browser keeps its own, and clearing site data loses it, so use <b>Export</b> to keep a copy you can reload here or carry to another device.
+  </footer>
+</div>
+
+  <div class="dropzone" id="dropzone" role="presentation" aria-hidden="true" hidden>
+    <div class="dropzone-inner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v11"/><path d="m7.5 9.5 4.5 4.5 4.5-4.5"/><path d="M4 16.5v2A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5v-2"/>
+      </svg>
+      <b>Drop to import</b>
+      <span>an exported trip file &middot; <code>.json</code></span>
+    </div>
+  </div>
+
+<script>
+(function () {
+  "use strict";
+
+  var GEO_URL = "https://geocoding-api.open-meteo.com/v1/search";
+  var FC_URL = "https://api.open-meteo.com/v1/forecast";
+  var ARCHIVE_URL = "https://archive-api.open-meteo.com/v1/archive";
+  var PAST_DAYS = 5, FUTURE_DAYS = 16;
+  // Climate normals: sample this many past years, +/- this many days around the
+  // matching calendar date, whenever the forecast can only reach this far short.
+  var NORMAL_YEARS = 10, NORMAL_PAD = 3, NORMAL_GAP = 3;
+  var STORE = "multiweather.v1";
+
+  /* ---------- WMO weather codes: label + icon family + severity ---------- */
+  var WMO = {
+    0:["Clear sky","sun",0], 1:["Mainly clear","sun-cloud",0], 2:["Partly cloudy","sun-cloud",0], 3:["Overcast","cloud",0],
+    45:["Fog","fog",1], 48:["Freezing fog","fog",1],
+    51:["Light drizzle","drizzle",1], 53:["Drizzle","drizzle",1], 55:["Heavy drizzle","drizzle",1],
+    56:["Freezing drizzle","sleet",2], 57:["Freezing drizzle","sleet",2],
+    61:["Light rain","rain",1], 63:["Rain","rain",1], 65:["Heavy rain","rain",2],
+    66:["Freezing rain","sleet",2], 67:["Freezing rain","sleet",2],
+    71:["Light snow","snow",1], 73:["Snow","snow",2], 75:["Heavy snow","snow",2], 77:["Snow grains","snow",1],
+    80:["Light showers","showers",1], 81:["Showers","showers",1], 82:["Violent showers","showers",2],
+    85:["Snow showers","snow",2], 86:["Heavy snow showers","snow",2],
+    95:["Thunderstorm","storm",2], 96:["Thunderstorm, hail","storm",2], 99:["Thunderstorm, hail","storm",2]
+  };
+
+  var CLOUD = "M17.4 18.5H7.2a4.6 4.6 0 0 1-.5-9.2 6.2 6.2 0 0 1 11.7 1.8 3.8 3.8 0 0 1-1 7.4Z";
+  function svg(inner){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + inner + "</svg>"; }
+  function rays(){
+    var out = "", i, a, x1, y1, x2, y2;
+    for (i = 0; i < 8; i++) {
+      a = i * Math.PI / 4;
+      x1 = 12 + Math.cos(a) * 6.6; y1 = 12 + Math.sin(a) * 6.6;
+      x2 = 12 + Math.cos(a) * 9.2; y2 = 12 + Math.sin(a) * 9.2;
+      out += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + x2.toFixed(1) + '" y2="' + y2.toFixed(1) + '"/>';
+    }
+    return out;
+  }
+  function drops(d){
+    var out = "", i, x;
+    for (i = 0; i < 3; i++) { x = 8.5 + i * 3.5; out += '<line x1="' + x + '" y1="19.5" x2="' + (x - 1.4) + '" y2="' + (19.5 + d) + '"/>'; }
+    return out;
+  }
+  function flakes(){
+    var out = "", i, x;
+    for (i = 0; i < 3; i++) {
+      x = 8.5 + i * 3.5;
+      out += '<line x1="' + (x - 1.3) + '" y1="21" x2="' + (x + 1.3) + '" y2="21"/><line x1="' + x + '" y1="19.7" x2="' + x + '" y2="22.3"/>';
+    }
+    return out;
+  }
+  var ICONS = {
+    "sun": svg('<circle cx="12" cy="12" r="4.6"/>' + rays()),
+    "sun-cloud": svg('<circle cx="9" cy="8.2" r="3.1"/><line x1="9" y1="2.4" x2="9" y2="3.6"/><line x1="4.9" y1="4.1" x2="5.8" y2="5"/><line x1="3.2" y1="8.2" x2="4.4" y2="8.2"/><path d="' + CLOUD + '"/>'),
+    "cloud": svg('<path d="' + CLOUD + '"/>'),
+    "fog": svg('<path d="M17.4 15.5H7.2a4.6 4.6 0 0 1-.5-9.2 6.2 6.2 0 0 1 11.7 1.8 3.8 3.8 0 0 1-1 7.4Z"/><line x1="5" y1="19" x2="16" y2="19"/><line x1="8" y1="22" x2="19" y2="22"/>'),
+    "drizzle": svg('<path d="' + CLOUD + '"/>' + drops(1.6)),
+    "rain": svg('<path d="' + CLOUD + '"/>' + drops(3.2)),
+    "showers": svg('<path d="' + CLOUD + '"/><line x1="9" y1="19.4" x2="7.2" y2="22.6"/><line x1="13" y1="19.4" x2="11.2" y2="22.6"/><line x1="17" y1="19.4" x2="15.2" y2="22.6"/>'),
+    "snow": svg('<path d="' + CLOUD + '"/>' + flakes()),
+    "sleet": svg('<path d="' + CLOUD + '"/><line x1="9" y1="19.6" x2="7.6" y2="22.6"/><line x1="14.2" y1="20.1" x2="16.8" y2="20.1"/><line x1="15.5" y1="18.8" x2="15.5" y2="21.4"/>'),
+    "storm": svg('<path d="' + CLOUD + '"/><path d="M13.2 19.2 10.3 19.2 12.4 23.4"/>')
+  };
+  function describe(code){ return WMO[code] || ["Unknown", "cloud", 0]; }
+
+  // A normal is a distribution, never an alert: cap its severity at "watch".
+  function daySeverity(d){
+    if (d.mode === "normal") {
+      if (!d.norm) return 0;
+      if (d.norm.fam === "snow" || d.norm.fam === "sleet") return 1;
+      return (d.norm.wetFrac != null && d.norm.wetFrac >= 0.4) ? 1 : 0;
+    }
+    if (d.mode === "normal-pending") return 0;
+    return describe(d.code)[2];
+  }
+
+  /* ---------- temperature ramp, keyed to degrees Celsius ---------- */
+  var RAMP = [[-20,62,95,168],[-5,78,134,188],[5,89,166,184],[12,95,168,126],[18,159,176,90],[24,215,154,58],[30,210,102,44],[38,184,56,42]];
+  function tempColor(c){
+    if (c == null || isNaN(c)) return "var(--ink-3)";
+    if (c <= RAMP[0][0]) return "rgb(" + RAMP[0].slice(1).join(",") + ")";
+    var last = RAMP[RAMP.length - 1];
+    if (c >= last[0]) return "rgb(" + last.slice(1).join(",") + ")";
+    for (var i = 0; i < RAMP.length - 1; i++) {
+      var a = RAMP[i], b = RAMP[i + 1];
+      if (c >= a[0] && c <= b[0]) {
+        var t = (c - a[0]) / (b[0] - a[0]);
+        return "rgb(" + [1,2,3].map(function (k) { return Math.round(a[k] + (b[k] - a[k]) * t); }).join(",") + ")";
+      }
+    }
+    return "var(--ink-3)";
+  }
+
+  /* ---------- date helpers (all local, never UTC) ---------- */
+  function iso(d){
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+  function parseISO(s){
+    if (!s) return null;
+    var p = s.split("-");
+    if (p.length !== 3) return null;
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return isNaN(d) ? null : d;
+  }
+  function addDays(d, n){ var x = new Date(d.getTime()); x.setDate(x.getDate() + n); return x; }
+  function dayDiff(a, b){ return Math.round((parseISO(a) - parseISO(b)) / 86400000); }
+  var fmtDay = new Intl.DateTimeFormat(undefined, { weekday: "short" });
+  var fmtMon = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric" });
+  var fmtFull = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  /* ---------- unit conversion (data is always fetched metric) ---------- */
+  var units = "imperial";
+  function temp(c){ return c == null ? null : (units === "imperial" ? c * 9 / 5 + 32 : c); }
+  function wind(kmh){ return kmh == null ? null : (units === "imperial" ? kmh * 0.621371 : kmh); }
+  function precip(mm){ return mm == null ? null : (units === "imperial" ? mm / 25.4 : mm); }
+  function uT(){ return units === "imperial" ? "°F" : "°C"; }
+  function uW(){ return units === "imperial" ? "mph" : "km/h"; }
+  function uP(){ return units === "imperial" ? "in" : "mm"; }
+  function r0(n){ return n == null ? "–" : String(Math.round(n)); }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (m) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[m];
+    });
+  }
+
+  /* ---------- state ---------- */
+  var uid = 0;
+  function newLeg(q, s, e){ return { id: "L" + (++uid), query: q || "", place: null, start: s || "", end: e || "", error: null }; }
+  var legs = [];
+  var fcCache = {};   // "lat,lon" -> daily object
+  var fcErr = {};     // "lat,lon" -> message
+  var isExample = false;
+
+  function save(){
+    try {
+      localStorage.setItem(STORE, JSON.stringify({
+        units: units, isExample: isExample,
+        legs: legs.map(function (l) { return { query: l.query, place: l.place, start: l.start, end: l.end }; })
+      }));
+    } catch (e) { /* private mode / blocked storage: run without persistence */ }
+  }
+  function load(){
+    var raw = null;
+    try { raw = localStorage.getItem(STORE); } catch (e) { raw = null; }
+    if (!raw) return false;
+    try {
+      var d = JSON.parse(raw);
+      if (!d || !Array.isArray(d.legs) || !d.legs.length) return false;
+      units = d.units === "metric" ? "metric" : "imperial";
+      isExample = !!d.isExample;
+      legs = d.legs.map(function (l) {
+        var n = newLeg(l.query, l.start, l.end);
+        n.place = l.place || null;
+        return n;
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+  function seedExample(){
+    var t = new Date();
+    isExample = true;
+    legs = [
+      (function () { var l = newLeg("Chicago", iso(addDays(t, 2)), iso(addDays(t, 4))); return l; })(),
+      (function () { var l = newLeg("Denver", iso(addDays(t, 6)), ""); return l; })(),
+      (function () { var l = newLeg("Reykjavik", iso(addDays(t, 9)), iso(addDays(t, 11))); return l; })(),
+      (function () { var l = newLeg("Lisbon", iso(addDays(t, 24)), ""); return l; })()
+    ];
+  }
+
+  /* ---------- API ---------- */
+  function rawGeocode(q){
+    var url = GEO_URL + "?name=" + encodeURIComponent(q) + "&count=8&language=en&format=json";
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("Place lookup failed (" + r.status + ")");
+      return r.json();
+    }).then(function (j) { return j.results || []; });
+  }
+
+  // The geocoder prefix-matches the whole string against the place's own name, so
+  // "Quebec City" finds nothing (it is filed as "Quebec") and "Frankfurt am Main"
+  // can miss. When a query comes back thin, retry without a generic suffix and
+  // then with trailing words dropped.
+  var GENERIC_TAIL = /[\s,]+(city|town|municipality|metro|metropolitan area)$/i;
+  function altQueries(q){
+    var out = [], t = q.replace(GENERIC_TAIL, "").trim();
+    if (t && t !== q) out.push(t);
+    var w = q.split(/\s+/);
+    while (w.length > 1) {
+      w = w.slice(0, -1);
+      var h = w.join(" ");
+      if (h && h !== q && out.indexOf(h) < 0) out.push(h);
+    }
+    return out.slice(0, 2);
+  }
+  function fold(s){
+    return String(s == null ? "" : s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  }
+  function rank(list, q){
+    var seen = {}, uniq = [];
+    list.forEach(function (p) {
+      var k = p && (p.id != null ? p.id : p.latitude + "," + p.longitude);
+      if (p && !seen[k]) { seen[k] = 1; uniq.push(p); }
+    });
+    var fq = fold(q), ft = fold(q.replace(GENERIC_TAIL, ""));
+    return uniq.map(function (p) {
+      var fn = fold(p.name), s;
+      if (fn === fq) s = 3;                                    // exact: "Mexico City"
+      else if (fn === ft) s = 2;                               // exact minus a generic tail: "Quebec City" -> Quebec
+      else if (fn.indexOf(fq) === 0 || fn.indexOf(ft) === 0) s = 1.5;  // still typing: "San F" -> San Francisco
+      else if (fn.length >= 3 && fq.indexOf(fn) === 0 && /[\s,]/.test(fq.charAt(fn.length))) s = 1;
+      else s = 0;                                              // ^ typed past the name: "Quebec C" -> Quebec
+      // A populated place outranks a peak, a country or a region in a city picker --
+      // this is what keeps "Quebec Citadel Peak" below Quebec while you type.
+      if (/^PPL/.test(p.feature_code || "")) s += 1;
+      // Size is evidence of which place was meant, but only weakly: a bounded log
+      // bonus, and a real penalty for no population at all, since that marks a
+      // hamlet or locality. Without it an exact hit on a nothing-place ("Lond",
+      // a village in Pakistan) outranks the city being typed ("London").
+      var n = p.population || 0;
+      s += n > 0 ? Math.min(1, Math.log10(n) / 7) : -1.5;
+      return { p: p, s: s };
+    }).sort(function (a, b) {
+      return (b.s - a.s) || ((b.p.population || 0) - (a.p.population || 0));
+    }).map(function (x) { return x.p; }).slice(0, 6);
+  }
+  function geocode(q){
+    q = String(q == null ? "" : q).trim();
+    if (!q) return Promise.resolve([]);
+    return rawGeocode(q).then(function (first) {
+      var alts = altQueries(q);
+      if (first.length >= 3 || !alts.length) return rank(first, q);
+      return Promise.all(alts.map(function (a) {
+        return rawGeocode(a).catch(function () { return []; });
+      })).then(function (rest) {
+        var all = first.slice();
+        rest.forEach(function (list) { list.forEach(function (p) { all.push(p); }); });
+        return rank(all, q);
+      });
+    });
+  }
+  function coordKey(p){ return p.latitude.toFixed(3) + "," + p.longitude.toFixed(3); }
+
+  // Geocoder hits carry a lot we never use (postcode lists, admin2/3 ids, elevation).
+  // Keep only the fields the page reads, so saved trips and exports stay small.
+  var PLACE_FIELDS = ["id","name","admin1","country","country_code","latitude","longitude","population","feature_code","timezone"];
+  function slimPlace(p){
+    if (!p) return null;
+    var out = {};
+    PLACE_FIELDS.forEach(function (f) { if (p[f] !== undefined) out[f] = p[f]; });
+    return out;
+  }
+
+  // The geocoder files the city as "Quebec" inside the province "Quebec", so the
+  // picker reads "Quebec, Quebec" and looks like you are choosing the province.
+  // English already has the convention for a city sharing its region's name --
+  // Quebec City, New York City, Panama City -- so say it that way.
+  function displayName(p){
+    if (!p) return "";
+    var n = p.name || "";
+    if (/^PPL/.test(p.feature_code || "") && p.admin1 &&
+        fold(n) === fold(p.admin1) && !/\bcity\b/i.test(n)) {
+      return n + " City";
+    }
+    return n;
+  }
+  function fetchForecast(p){
+    var key = coordKey(p);
+    if (fcCache[key]) return Promise.resolve(fcCache[key]);
+    var daily = ["weather_code","temperature_2m_max","temperature_2m_min","apparent_temperature_max",
+      "apparent_temperature_min","precipitation_sum","precipitation_probability_max","wind_speed_10m_max","uv_index_max"];
+    var url = FC_URL + "?latitude=" + p.latitude + "&longitude=" + p.longitude +
+      "&daily=" + daily.join(",") + "&timezone=auto&past_days=" + PAST_DAYS + "&forecast_days=" + FUTURE_DAYS;
+    return fetch(url).then(function (r) {
+      if (!r.ok) throw new Error("Forecast request failed (" + r.status + ")");
+      return r.json();
+    }).then(function (j) {
+      if (!j.daily || !j.daily.time) throw new Error("Forecast response had no daily data");
+      fcCache[key] = j.daily;
+      delete fcErr[key];
+      return j.daily;
+    }).catch(function (e) {
+      fcErr[key] = e.message || "Forecast unavailable";
+      throw e;
+    });
+  }
+
+  /* ---------- climate normals (ERA5 archive) for dates past the forecast ---------- */
+  function delay(ms){ return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  // Run tasks at most `width` at a time, so a multi-stop trip does not burst.
+  function pooled(items, width, task){
+    var out = new Array(items.length), next = 0;
+    function worker(){
+      if (next >= items.length) return Promise.resolve();
+      var i = next++;
+      return Promise.resolve(task(items[i])).then(function (v) { out[i] = v; return worker(); });
+    }
+    var runners = [];
+    for (var k = 0; k < Math.min(width, items.length); k++) runners.push(worker());
+    return Promise.all(runners).then(function () { return out; });
+  }
+
+  // 429 means the shared free-tier budget is momentarily spent; back off and retry
+  // rather than surfacing an error for something that clears in seconds.
+  function archiveFetch(url, retries){
+    return fetch(url).then(function (r) {
+      if (r.status === 429) {
+        if (retries > 0) return delay(1500 * (3 - retries)).then(function () { return archiveFetch(url, retries - 1); });
+        throw new Error("Open-Meteo is rate-limiting right now — press Refresh in a minute");
+      }
+      if (!r.ok) throw new Error("Climate archive request failed (" + r.status + ")");
+      return r.json();
+    });
+  }
+
+  var NORM_STORE = "multiweather.normals.v1";
+  var NORM_TTL = 30 * 86400000;   // normals barely move; a month-old cache is fine
+  var normCache = {}, normErr = {};
+  function normKey(p, startISO, endISO){ return coordKey(p) + "|" + startISO + "|" + endISO; }
+
+  // Only the computed statistics are cached, never the raw archive response --
+  // a decade of daily rows would not fit in localStorage.
+  function loadNormals(){
+    try {
+      var raw = localStorage.getItem(NORM_STORE);
+      if (!raw) return;
+      var all = JSON.parse(raw), now = Date.now(), keep = {};
+      Object.keys(all).forEach(function (k) {
+        if (all[k] && now - all[k].t < NORM_TTL) { keep[k] = all[k]; normCache[k] = all[k]; }
+      });
+      localStorage.setItem(NORM_STORE, JSON.stringify(keep));
+    } catch (e) { /* storage unavailable: normals just refetch each session */ }
+  }
+  function persistNormals(){
+    try {
+      var out = {};
+      Object.keys(normCache).forEach(function (k) { out[k] = normCache[k]; });
+      localStorage.setItem(NORM_STORE, JSON.stringify(out));
+    } catch (e) { /* over quota or blocked: in-memory cache still works */ }
+  }
+
+  function fetchNormals(place, startISO, endISO){
+    var key = normKey(place, startISO, endISO);
+    if (normCache[key]) return Promise.resolve(normCache[key]);
+
+    var start = parseISO(startISO), end = parseISO(endISO);
+    var lenDays = Math.round((end - start) / 86400000);
+    var baseYear = start.getFullYear();
+    var firstYear = baseYear - NORMAL_YEARS, lastYear = baseYear - 1;
+    var vars = ["weather_code","temperature_2m_max","temperature_2m_min","precipitation_sum","wind_speed_10m_max"];
+
+    // One short request per sampled year, NOT one continuous span. Open-Meteo
+    // prices a request by how much it covers: past 14 days for a single location
+    // it counts as several API calls. A continuous 10-year pull is ~261 calls
+    // against a 600/minute budget; ten <=14-day windows are 1 call each.
+    var years = [];
+    for (var y = firstYear; y <= lastYear; y++) {
+      var anchor = new Date(y, start.getMonth(), start.getDate());
+      years.push({
+        from: iso(addDays(anchor, -NORMAL_PAD)),
+        to: iso(addDays(anchor, lenDays + NORMAL_PAD))
+      });
+    }
+
+    return pooled(years, 3, function (yr) {
+      var url = ARCHIVE_URL + "?latitude=" + place.latitude + "&longitude=" + place.longitude +
+        "&start_date=" + yr.from + "&end_date=" + yr.to +
+        "&daily=" + vars.join(",") + "&timezone=auto";
+      return archiveFetch(url, 2);
+    }).then(function (parts) {
+      // Merge the yearly windows into one date-indexed table, then the statistics
+      // below run exactly as they would over a single response.
+      var d = { time: [] };
+      vars.forEach(function (v) { d[v] = []; });
+      parts.forEach(function (j) {
+        var p = j && j.daily;
+        if (!p || !p.time) return;
+        for (var i = 0; i < p.time.length; i++) {
+          d.time.push(p.time[i]);
+          vars.forEach(function (v) { d[v].push(p[v] ? p[v][i] : null); });
+        }
+      });
+      if (!d.time.length) throw new Error("Climate archive returned no data");
+      var index = {}, i;
+      for (i = 0; i < d.time.length; i++) index[d.time[i]] = i;
+
+      var rec = { t: Date.now(), years: [firstYear, lastYear], byDate: {} };
+      for (var o = 0; o <= lenDays; o++) {
+        var want = iso(addDays(start, o));
+        var his = [], los = [], winds = [], wet = 0, total = 0, fams = {};
+        for (var y = firstYear; y <= lastYear; y++) {
+          var centre = addDays(new Date(y, start.getMonth(), start.getDate()), o);
+          for (var k = -NORMAL_PAD; k <= NORMAL_PAD; k++) {
+            var idx = index[iso(addDays(centre, k))];
+            if (idx == null) continue;
+            if (d.temperature_2m_max[idx] != null) his.push(d.temperature_2m_max[idx]);
+            if (d.temperature_2m_min[idx] != null) los.push(d.temperature_2m_min[idx]);
+            if (d.wind_speed_10m_max[idx] != null) winds.push(d.wind_speed_10m_max[idx]);
+            if (d.precipitation_sum[idx] != null) { total++; if (d.precipitation_sum[idx] >= 1) wet++; }
+            if (d.weather_code[idx] != null) {
+              var f = describe(d.weather_code[idx])[1];
+              fams[f] = (fams[f] || 0) + 1;
+            }
+          }
+        }
+        if (!his.length) continue;
+        var topFam = "cloud", topN = -1;
+        Object.keys(fams).forEach(function (f) { if (fams[f] > topN) { topN = fams[f]; topFam = f; } });
+        rec.byDate[want] = {
+          hi: mean(his), lo: mean(los),
+          p10: quantile(his, 0.1), p90: quantile(his, 0.9),
+          coldest: quantile(los, 0.1),
+          wind: mean(winds),
+          wetFrac: total ? wet / total : null,
+          fam: topFam, years: [firstYear, lastYear], n: his.length
+        };
+      }
+      normCache[key] = rec;
+      delete normErr[key];
+      persistNormals();
+      return rec;
+    }).catch(function (e) {
+      normErr[key] = e.message || "Climate normals unavailable";
+      throw e;
+    });
+  }
+
+  function mean(a){ return a.length ? a.reduce(function (x, y) { return x + y; }, 0) / a.length : null; }
+  function quantile(a, q){
+    if (!a.length) return null;
+    var s = a.slice().sort(function (x, y) { return x - y; });
+    var i = (s.length - 1) * q, lo = Math.floor(i), hi = Math.ceil(i);
+    return lo === hi ? s[lo] : s[lo] + (s[hi] - s[lo]) * (i - lo);
+  }
+
+  function normalFor(rec, wantISO){ return (rec && rec.byDate && rec.byDate[wantISO]) || null; }
+
+  var FAM_WORD = {
+    "sun": "clear", "sun-cloud": "part cloud", "cloud": "overcast", "fog": "foggy",
+    "drizzle": "damp", "rain": "wet", "showers": "showery",
+    "snow": "snowy", "sleet": "icy", "storm": "stormy"
+  };
+
+  /* ---------- match a requested date to the closest covered day ---------- */
+  function matchDay(daily, want){
+    var times = daily.time, i, best = 0, bestGap = Infinity, gap;
+    for (i = 0; i < times.length; i++) {
+      if (times[i] === want) return { index: i, gap: 0 };
+      gap = Math.abs(dayDiff(times[i], want));
+      if (gap < bestGap) { bestGap = gap; best = i; }
+    }
+    return { index: best, gap: dayDiff(times[best], want) };
+  }
+  // The contiguous span of this leg's dates that the forecast cannot reach.
+  function normalSpan(leg, daily){
+    var beyond = legDates(leg).filter(function (w) { return matchDay(daily, w).gap <= -NORMAL_GAP; });
+    return beyond.length ? [beyond[0], beyond[beyond.length - 1]] : null;
+  }
+  function legDates(leg){
+    var s = parseISO(leg.start);
+    if (!s) return [];
+    var e = parseISO(leg.end) || s;
+    if (e < s) e = s;
+    var out = [], cur = s, guard = 0;
+    while (cur <= e && guard++ < 31) { out.push(iso(cur)); cur = addDays(cur, 1); }
+    return out;
+  }
+
+  /* ---------- DOM ---------- */
+  var $legs = document.getElementById("legs");
+  var $cards = document.getElementById("cards");
+  var $strip = document.getElementById("strip");
+  var $notice = document.getElementById("notice");
+  var $status = document.getElementById("status");
+
+  function placeLabel(p){
+    if (!p) return "";
+    return [displayName(p), p.admin1, p.country].filter(Boolean).join(", ");
+  }
+
+  function renderEditor(){
+    $legs.innerHTML = "";
+    legs.forEach(function (leg, i) {
+      var row = document.createElement("div");
+      row.className = "leg";
+      row.innerHTML =
+        '<div class="no">' + String(i + 1).padStart(2, "0") + "</div>" +
+        '<div class="field f-city">' +
+          '<label for="' + leg.id + '-c">City</label>' +
+          '<input id="' + leg.id + '-c" type="text" autocomplete="off" spellcheck="false" placeholder="Start typing a city…" value="' + esc(leg.query) + '">' +
+          '<div class="resolved' + (leg.error ? " bad" : "") + '">' + esc(leg.error || placeLabel(leg.place) || "") + "</div>" +
+        "</div>" +
+        '<div class="field f-start">' +
+          '<label for="' + leg.id + '-s">Arrive</label>' +
+          '<input id="' + leg.id + '-s" type="date" value="' + esc(leg.start) + '">' +
+        "</div>" +
+        '<div class="field f-end">' +
+          '<label for="' + leg.id + '-e">Depart <span style="text-transform:none;letter-spacing:0">(optional)</span></label>' +
+          '<input id="' + leg.id + '-e" type="date" value="' + esc(leg.end) + '">' +
+        "</div>" +
+        '<button class="kill" type="button" title="Remove this stop" aria-label="Remove stop ' + (i + 1) + '">×</button>';
+
+      var city = row.querySelector("#" + leg.id + "-c");
+      var start = row.querySelector("#" + leg.id + "-s");
+      var end = row.querySelector("#" + leg.id + "-e");
+
+      city.addEventListener("input", function () {
+        clearExample();
+        leg.query = city.value;
+        leg.place = null;
+        leg.error = null;
+        suggest(leg, city, row);
+        save();
+        scheduleRefresh();
+      });
+      city.addEventListener("blur", function () { setTimeout(function () { closeAC(row); }, 160); });
+      start.addEventListener("change", function () {
+        clearExample();
+        leg.start = start.value;
+        if (leg.end && leg.end < leg.start) { leg.end = ""; end.value = ""; }
+        save(); scheduleRefresh();
+      });
+      end.addEventListener("change", function () { clearExample(); leg.end = end.value; save(); scheduleRefresh(); });
+      row.querySelector(".kill").addEventListener("click", function () {
+        clearExample();
+        legs = legs.filter(function (x) { return x !== leg; });
+        save(); renderEditor(); scheduleRefresh(0);
+      });
+
+      $legs.appendChild(row);
+    });
+
+    if (!legs.length) {
+      $legs.innerHTML = '<div class="empty">No stops yet. Use <b>Add stop</b> to start your itinerary.</div>';
+    }
+    renderNotice();
+    renderItinCount();
+  }
+
+  function clearExample(){
+    if (!isExample) return;
+    isExample = false;
+    renderNotice();
+  }
+  function renderNotice(){
+    if (isExample && legs.length) {
+      $notice.hidden = false;
+      $notice.innerHTML = '<b style="color:var(--ink)">Example itinerary.</b> These are sample stops so you can see the board working — edit any field to make it yours.' +
+        ' <button class="btn quiet" type="button" id="wipe" style="margin-left:auto">Start empty</button>';
+      document.getElementById("wipe").addEventListener("click", function () {
+        isExample = false; legs = [newLeg("", "", "")]; save(); renderEditor(); render(); focusLast();
+      });
+    } else {
+      $notice.hidden = true;
+      $notice.innerHTML = "";
+    }
+  }
+
+  /* ---------- city autocomplete ---------- */
+  var acTimer = null, acToken = 0;
+  function closeAC(row){ var el = row.querySelector(".ac"); if (el) el.remove(); }
+  function suggest(leg, input, row){
+    clearTimeout(acTimer);
+    var q = input.value.trim();
+    if (q.length < 2) { closeAC(row); return; }
+    var mine = ++acToken;
+    acTimer = setTimeout(function () {
+      geocode(q).then(function (list) {
+        if (mine !== acToken || document.activeElement !== input) return;
+        closeAC(row);
+        if (!list.length) return;
+        var box = document.createElement("div");
+        box.className = "ac";
+        list.forEach(function (p) {
+          var d = document.createElement("div");
+          var sub = [p.admin1, p.country].filter(Boolean).join(" · ");
+          sub += p.population ? " · pop " + p.population.toLocaleString()
+                              : " · " + p.latitude.toFixed(2) + ", " + p.longitude.toFixed(2);
+          d.innerHTML = esc(displayName(p)) + "<span>" + esc(sub) + "</span>";
+          d.addEventListener("mousedown", function (ev) {
+            ev.preventDefault();
+            leg.place = slimPlace(p);
+            leg.query = displayName(p);
+            leg.error = null;
+            input.value = leg.query;
+            row.querySelector(".resolved").textContent = placeLabel(p);
+            row.querySelector(".resolved").classList.remove("bad");
+            closeAC(row);
+            save(); scheduleRefresh(0);
+          });
+          box.appendChild(d);
+        });
+        row.querySelector(".f-city").appendChild(box);
+      }).catch(function () { closeAC(row); });
+    }, 280);
+  }
+
+  /* ---------- refresh: resolve places, fetch forecasts, paint ---------- */
+  var refreshTimer = null, runToken = 0;
+  function scheduleRefresh(delay){
+    clearTimeout(refreshTimer);
+    refreshTimer = setTimeout(refresh, delay == null ? 550 : delay);
+  }
+
+  function refresh(){
+    var mine = ++runToken;
+    var pending = legs.filter(function (l) { return l.query.trim() && l.start; });
+    if (!pending.length) { $status.textContent = ""; render(); return; }
+    $status.textContent = "Loading…";
+
+    var work = legs.map(function (leg) {
+      if (!leg.query.trim() || !leg.start) return Promise.resolve();
+      var step = leg.place
+        ? Promise.resolve(leg.place)
+        : geocode(leg.query.trim()).then(function (list) {
+            if (!list.length) throw new Error("No place matched “" + leg.query.trim() + "”");
+            leg.place = slimPlace(list[0]);
+            return list[0];
+          });
+      return step.then(function (p) { leg.error = null; return fetchForecast(p); })
+                 .catch(function (e) { leg.error = e.message || "Lookup failed"; });
+    });
+
+    Promise.all(work).then(function () {
+      if (mine !== runToken) return;
+      // Forecasts are in: paint them, then fill any date the model could not reach
+      // with a climate normal.
+      save();
+      renderResolvedLabels();
+      render();
+
+      var needed = [];
+      legs.forEach(function (leg) {
+        if (!leg.place || leg.error) return;
+        var daily = fcCache[coordKey(leg.place)];
+        if (!daily) return;
+        var span = normalSpan(leg, daily);
+        if (!span) return;
+        var k = normKey(leg.place, span[0], span[1]);
+        if (normCache[k] || normErr[k] || needed.some(function (n) { return n.k === k; })) return;
+        needed.push({ k: k, place: leg.place, span: span });
+      });
+
+      if (!needed.length) { $status.textContent = stamp(); return; }
+      $status.textContent = "Building climate normals…";
+      return Promise.all(needed.map(function (n) {
+        return fetchNormals(n.place, n.span[0], n.span[1]).catch(function () {});
+      })).then(function () {
+        if (mine !== runToken) return;
+        $status.textContent = stamp();
+        render();
+      });
+    });
+  }
+
+  function stamp(){
+    return "Updated " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+
+  function renderResolvedLabels(){
+    var rows = $legs.querySelectorAll(".leg");
+    legs.forEach(function (leg, i) {
+      var el = rows[i] && rows[i].querySelector(".resolved");
+      if (!el) return;
+      el.textContent = leg.error || placeLabel(leg.place) || "";
+      el.classList.toggle("bad", !!leg.error);
+    });
+  }
+
+  /* ---------- build the view model ---------- */
+  function buildRows(){
+    return legs.map(function (leg) {
+      var out = { leg: leg, days: [], status: "ok", message: "" };
+      if (!leg.query.trim() || !leg.start) { out.status = "incomplete"; return out; }
+      if (leg.error) { out.status = "error"; out.message = leg.error; return out; }
+      if (!leg.place) { out.status = "error"; out.message = "Place not resolved yet"; return out; }
+      var daily = fcCache[coordKey(leg.place)];
+      if (!daily) { out.status = fcErr[coordKey(leg.place)] ? "error" : "pending"; out.message = fcErr[coordKey(leg.place)] || ""; return out; }
+
+      var span = normalSpan(leg, daily);
+      var nkey = span ? normKey(leg.place, span[0], span[1]) : null;
+      var nrec = nkey ? normCache[nkey] : null;
+
+      legDates(leg).forEach(function (want) {
+        var m = matchDay(daily, want);
+        var i = m.index;
+        var day = {
+          want: want, got: daily.time[i], gap: m.gap, mode: "forecast",
+          code: daily.weather_code[i],
+          hi: daily.temperature_2m_max[i], lo: daily.temperature_2m_min[i],
+          fhi: daily.apparent_temperature_max[i], flo: daily.apparent_temperature_min[i],
+          pop: daily.precipitation_probability_max[i], psum: daily.precipitation_sum[i],
+          wind: daily.wind_speed_10m_max[i], uv: daily.uv_index_max[i]
+        };
+        if (m.gap <= -NORMAL_GAP) {
+          var stats = nrec ? normalFor(nrec, want) : null;
+          if (stats) {
+            day.mode = "normal";
+            day.norm = stats;
+            day.hi = stats.hi; day.lo = stats.lo;    // feed the shared scale and "pack for"
+            day.code = null;
+          } else if (nkey && normErr[nkey]) {
+            day.mode = "forecast";
+            day.normFailed = normErr[nkey];
+          } else {
+            day.mode = "normal-pending";
+          }
+        }
+        out.days.push(day);
+      });
+      return out;
+    });
+  }
+
+  function render(){
+    var rows = buildRows();
+
+    // one shared temperature scale across the whole trip, so stops compare directly
+    var lo = Infinity, hi = -Infinity;
+    rows.forEach(function (r) { r.days.forEach(function (d) {
+      if (d.lo != null) lo = Math.min(lo, d.lo);
+      if (d.hi != null) hi = Math.max(hi, d.hi);
+    }); });
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    if (hi - lo < 4) { hi = lo + 4; }
+    var pad = (hi - lo) * 0.08; lo -= pad; hi += pad;
+
+    renderStrip(rows, lo, hi);
+
+    var anyNormal = rows.some(function (r) {
+      return r.days.some(function (d) { return d.mode === "normal" || d.mode === "normal-pending"; });
+    });
+    document.getElementById("legend").hidden = !anyNormal;
+
+    $cards.innerHTML = "";
+    if (!rows.length || rows.every(function (r) { return r.status === "incomplete"; })) {
+      $cards.innerHTML = '<div class="empty">Add a city and an arrival date above, and its forecast lands here.</div>';
+      return;
+    }
+
+    rows.forEach(function (r, i) {
+      if (r.status === "incomplete") return;
+      var card = document.createElement("article");
+      var sev = Math.max.apply(null, [0].concat(r.days.map(daySeverity)));
+      card.className = "card " + (sev >= 2 ? "alert" : sev === 1 ? "watch" : "");
+
+      var span = r.days.length
+        ? (r.days.length === 1 ? fmtFull.format(parseISO(r.days[0].want))
+            : fmtMon.format(parseISO(r.days[0].want)) + " – " + fmtFull.format(parseISO(r.days[r.days.length - 1].want)))
+        : (r.leg.start ? fmtFull.format(parseISO(r.leg.start)) : "");
+
+      var head =
+        '<div class="bar"></div>' +
+        '<div class="card-head">' +
+          "<h3>" + esc(r.leg.place ? placeLabel(r.leg.place) : r.leg.query) + "</h3>" +
+          '<span class="dot" aria-hidden="true">·</span>' +
+          '<span class="when">' + esc(span) + "</span>" +
+        "</div>";
+
+      if (r.status === "pending") {
+        card.innerHTML = head + '<div class="card-msg">Fetching forecast…</div>';
+      } else if (r.status === "error") {
+        card.innerHTML = head + '<div class="card-msg bad">' + esc(r.message) + "</div>";
+      } else {
+        card.innerHTML = head + r.days.map(function (d) { return dayHTML(d, lo, hi, r.days.length > 1); }).join("");
+      }
+      $cards.appendChild(card);
+    });
+  }
+
+  function wrapMetric(m){ return "<span>" + m + "</span>"; }
+
+  // On a single-day stop the header already carries the date, so the row shows
+  // only the weekday -- same column, no repetition.
+  function rowDate(dt, multi){ return multi ? fmtDay.format(dt) + " " + fmtMon.format(dt) : fmtDay.format(dt); }
+
+  function dayHTML(d, scaleLo, scaleHi, multi){
+    if (d.mode === "normal") return normalHTML(d, scaleLo, scaleHi, multi);
+    if (d.mode === "normal-pending") {
+      var pd = parseISO(d.want);
+      return '<div class="day pending-row">' +
+        '<div class="date">' + esc(rowDate(pd, multi)) + "</div>" +
+        '<div class="ico"></div><div><div class="cond">Beyond the forecast — building climate normal…</div></div><div></div></div>';
+    }
+    var w = describe(d.code);
+    var wantD = parseISO(d.want);
+    var chip = "";
+    if (d.normFailed) chip += '<span class="chip out">climate normal unavailable — showing nearest forecast day</span>';
+    if (d.gap !== 0) {
+      var n = Math.abs(d.gap);
+      var dir = d.gap < 0 ? "earlier" : "later";
+      var cls = n > 3 ? "out" : "sub";
+      chip += '<span class="chip ' + cls + '">closest covered day: ' + esc(fmtMon.format(parseISO(d.got))) + " · " + n + " day" + (n === 1 ? "" : "s") + " " + dir + "</span>";
+    }
+    var pct = function (c) { return Math.max(0, Math.min(100, (c - scaleLo) / (scaleHi - scaleLo) * 100)); };
+    var bar = "";
+    if (d.lo != null && d.hi != null) {
+      var a = pct(d.lo), b = pct(d.hi);
+      bar = '<div class="range"><i style="left:' + a.toFixed(1) + "%;width:" + Math.max(2, b - a).toFixed(1) + "%;" +
+        "background:linear-gradient(90deg," + tempColor(d.lo) + "," + tempColor(d.hi) + ')"></i></div>';
+    }
+    var metrics = [];
+    if (d.fhi != null) metrics.push("<i>feels</i> " + r0(temp(d.fhi)) + "° / " + r0(temp(d.flo)) + "°");
+    if (d.pop != null) metrics.push("<i>precip</i> " + r0(d.pop) + "%" + (d.psum ? " · " + (units === "imperial" ? precip(d.psum).toFixed(2) : precip(d.psum).toFixed(1)) + " " + uP() : ""));
+    if (d.wind != null) metrics.push("<i>wind</i> " + r0(wind(d.wind)) + " " + uW());
+    if (d.uv != null) metrics.push("<i>uv</i> " + r0(d.uv));
+
+    return '<div class="day">' +
+      '<div class="date">' + esc(rowDate(wantD, multi)) + "</div>" +
+      '<div class="ico">' + (ICONS[w[1]] || ICONS.cloud) + "</div>" +
+      "<div>" +
+        '<div class="cond">' + esc(w[0]) + "</div>" +
+        '<div class="metrics">' + metrics.map(wrapMetric).join("") + "</div>" +
+        chip +
+      "</div>" +
+      '<div class="temps"><span class="hi" style="color:' + tempColor(d.hi) + '">' + r0(temp(d.hi)) + "°</span>" +
+        '<span class="lo">' + r0(temp(d.lo)) + "°</span>" + bar + "</div>" +
+    "</div>";
+  }
+
+  function normalHTML(d, scaleLo, scaleHi, multi){
+    var n = d.norm, wantD = parseISO(d.want);
+    var pct = function (c) { return Math.max(0, Math.min(100, (c - scaleLo) / (scaleHi - scaleLo) * 100)); };
+    var bar = "";
+    if (n.p10 != null && n.p90 != null) {
+      var a = pct(n.p10), b = pct(n.p90);
+      bar = '<div class="range"><i style="left:' + a.toFixed(1) + "%;width:" + Math.max(2, b - a).toFixed(1) + "%;" +
+        "background:linear-gradient(90deg," + tempColor(n.p10) + "," + tempColor(n.p90) + ')"></i></div>';
+    }
+    var wetPer10 = n.wetFrac == null ? null : Math.round(n.wetFrac * 10);
+    var metrics = [];
+    if (n.p10 != null) metrics.push("<i>usual high</i> " + r0(temp(n.p10)) + "–" + r0(temp(n.p90)) + "°");
+    if (n.coldest != null) metrics.push("<i>cold nights</i> down to " + r0(temp(n.coldest)) + "°");
+    if (wetPer10 != null) metrics.push("<i>wet days</i> " + wetPer10 + " in 10");
+    if (n.wind != null) metrics.push("<i>wind</i> " + r0(wind(n.wind)) + " " + uW() + " avg");
+
+    var word = FAM_WORD[n.fam] || "mixed";
+    return '<div class="day normal-row">' +
+      '<div class="date">' + esc(rowDate(wantD, multi)) + "</div>" +
+      '<div class="ico">' + (ICONS[n.fam] || ICONS.cloud) + "</div>" +
+      "<div>" +
+        '<div class="cond">Typically ' + esc(word) + "</div>" +
+        '<div class="metrics">' + metrics.map(wrapMetric).join("") + "</div>" +
+        '<span class="chip norm" title="Mean of ' + n.n + ' observed days within ±' + NORMAL_PAD +
+          ' days of this date, ' + n.years[0] + '–' + n.years[1] + ' (ERA5 reanalysis). Not a forecast.">' +
+          NORMAL_YEARS + "-year normal · " + n.years[0] + "–" + n.years[1] + "</span>" +
+      "</div>" +
+      '<div class="temps"><span class="hi" style="color:' + tempColor(n.hi) + '">' + r0(temp(n.hi)) + "°</span>" +
+        '<span class="lo">' + r0(temp(n.lo)) + "°</span>" + bar + "</div>" +
+    "</div>";
+  }
+
+  function renderStrip(rows, scaleLo, scaleHi){
+    var all = [];
+    rows.forEach(function (r) { all = all.concat(r.days); });
+    var stops = rows.filter(function (r) { return r.status !== "incomplete"; }).length;
+    var normals = all.filter(function (d) { return d.mode === "normal" || d.mode === "normal-pending"; }).length;
+    var approx = all.filter(function (d) { return d.mode === "forecast" && d.gap !== 0; }).length;
+    var wet = all.filter(function (d) { return daySeverity(d) >= 1; }).length;
+
+    var dates = [];
+    legs.forEach(function (l) { legDates(l).forEach(function (d) { dates.push(d); }); });
+    dates.sort();
+    var span = dates.length
+      ? (dates.length === 1 ? fmtFull.format(parseISO(dates[0]))
+          : fmtMon.format(parseISO(dates[0])) + " – " + fmtFull.format(parseISO(dates[dates.length - 1])))
+      : "—";
+
+    var coldest = null, hottest = null;
+    all.forEach(function (d) {
+      if (d.lo != null && (coldest === null || d.lo < coldest)) coldest = d.lo;
+      if (d.hi != null && (hottest === null || d.hi > hottest)) hottest = d.hi;
+    });
+
+    function cell(k, v, flag){
+      return '<div class="cell' + (flag ? " flag" : "") + '"><div class="k">' + k + '</div><div class="v">' + v + "</div></div>";
+    }
+    $strip.innerHTML =
+      cell("Stops", stops + " <small>" + (all.length ? all.length + " days" : "no dates yet") + "</small>") +
+      cell("Trip span", '<span style="font-size:15px">' + esc(span) + "</span>") +
+      cell("Pack for", all.length && coldest != null
+        ? '<span style="color:' + tempColor(coldest) + '">' + r0(temp(coldest)) + "°</span> <small>to</small> " +
+          '<span style="color:' + tempColor(hottest) + '">' + r0(temp(hottest)) + uT() + "</span>"
+        : "—") +
+      cell("Wet or rough days", all.length ? wet + " <small>of " + all.length + "</small>" : "—", wet > 0) +
+      cell("Beyond forecast",
+        !all.length ? "—"
+          : normals ? normals + " <small>day" + (normals === 1 ? "" : "s") + " on climate normals</small>"
+          : approx ? approx + " <small>day" + (approx === 1 ? "" : "s") + " shifted a day or two</small>"
+          : "none <small>all exact</small>",
+        false);
+  }
+
+  /* ---------- export / import ---------- */
+  var $flash = document.getElementById("flash");
+  var $file = document.getElementById("file");
+  var flashTimer = null;
+  function flash(msg, kind){
+    clearTimeout(flashTimer);
+    $flash.className = "notice" + (kind ? " " + kind : "");
+    $flash.textContent = msg;
+    $flash.hidden = false;
+    flashTimer = setTimeout(function () { $flash.hidden = true; }, 7000);
+  }
+
+  function realLegs(){
+    return legs.filter(function (l) { return l.query.trim() || l.start; });
+  }
+
+  function exportTrip(){
+    var keep = realLegs();
+    if (!keep.length) { flash("Nothing to export yet — add a stop first.", "bad"); return; }
+    var payload = {
+      app: "trip-forecast-board", version: 1,
+      exported: new Date().toISOString(),
+      units: units,
+      legs: keep.map(function (l) { return { query: l.query, place: l.place, start: l.start, end: l.end }; })
+    };
+    var dates = keep.map(function (l) { return l.start; }).filter(Boolean).sort();
+    var name = "trip-forecast-" + (dates[0] || iso(new Date())) + ".json";
+    var url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    var a = document.createElement("a");
+    a.href = url; a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    flash("Exported " + keep.length + " stop" + (keep.length === 1 ? "" : "s") + " to " + name + ".", "good");
+  }
+
+  function validISO(s){ return typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s) && !!parseISO(s); }
+  // An imported place is fed straight into API URLs, so check it rather than trust it.
+  function validPlace(p){
+    return !!p && typeof p === "object" &&
+      typeof p.name === "string" && p.name.length > 0 && p.name.length < 200 &&
+      typeof p.latitude === "number" && isFinite(p.latitude) && Math.abs(p.latitude) <= 90 &&
+      typeof p.longitude === "number" && isFinite(p.longitude) && Math.abs(p.longitude) <= 180;
+  }
+
+  function importTrip(file){
+    var reader = new FileReader();
+    reader.onerror = function () { flash("Could not read that file.", "bad"); };
+    reader.onload = function () {
+      var data;
+      try { data = JSON.parse(reader.result); }
+      catch (e) { flash("That file isn’t valid JSON.", "bad"); return; }
+      if (!data || !Array.isArray(data.legs)) {
+        flash("That file doesn’t look like a saved trip — it has no “legs” list.", "bad");
+        return;
+      }
+      var dropped = 0;
+      var clean = data.legs.map(function (l) {
+        if (!l || typeof l !== "object") { dropped++; return null; }
+        var q = typeof l.query === "string" ? l.query.slice(0, 200) : "";
+        var s = validISO(l.start) ? l.start : "";
+        var e = validISO(l.end) && (!s || l.end >= s) ? l.end : "";
+        if (!q && !s) { dropped++; return null; }
+        var n = newLeg(q, s, e);
+        n.place = validPlace(l.place) ? slimPlace(l.place) : null;   // unresolved places re-geocode on load
+        return n;
+      }).filter(Boolean);
+
+      if (!clean.length) { flash("No usable stops in that file.", "bad"); return; }
+      var current = realLegs().length;
+      if (!isExample && current &&
+          !confirm("Replace the current " + current + " stop" + (current === 1 ? "" : "s") +
+                   " with " + clean.length + " from this file?")) return;
+
+      legs = clean;
+      isExample = false;
+      if (data.units === "metric" || data.units === "imperial") units = data.units;
+      syncUnitButtons();
+      fcCache = {}; fcErr = {}; normErr = {};
+      save(); renderEditor(); render(); scheduleRefresh(0);
+      flash("Imported " + clean.length + " stop" + (clean.length === 1 ? "" : "s") + " from " + file.name +
+            (dropped ? " — skipped " + dropped + " unusable entr" + (dropped === 1 ? "y" : "ies") + "." : "."), "good");
+    };
+    reader.readAsText(file);
+  }
+
+  // Drag a saved trip anywhere onto the page to import it.
+  var $dz = document.getElementById("dropzone");
+  var dragDepth = 0;
+  function isFileDrag(e){
+    var t = e.dataTransfer && e.dataTransfer.types;
+    if (!t) return false;
+    for (var i = 0; i < t.length; i++) if (t[i] === "Files") return true;
+    return false;
+  }
+  function endDrag(){ dragDepth = 0; $dz.hidden = true; }
+
+  document.addEventListener("dragenter", function (e) {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();
+    dragDepth++;
+    $dz.hidden = false;
+  });
+  document.addEventListener("dragover", function (e) {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();                       // without this the browser refuses the drop
+    e.dataTransfer.dropEffect = "copy";
+  });
+  document.addEventListener("dragleave", function (e) {
+    if (!isFileDrag(e)) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (!dragDepth) $dz.hidden = true;
+  });
+  document.addEventListener("dragend", endDrag);
+  document.addEventListener("drop", function (e) {
+    if (!isFileDrag(e)) return;
+    e.preventDefault();                       // stop the browser navigating to the file
+    endDrag();
+    var files = e.dataTransfer.files;
+    if (!files || !files.length) return;
+    if (files.length > 1) { flash("Drop one trip file at a time.", "bad"); return; }
+    var f = files[0];
+    if (!/\.json$/i.test(f.name) && f.type !== "application/json") {
+      flash("“" + f.name + "” isn’t a JSON trip file.", "bad");
+      return;
+    }
+    importTrip(f);
+  });
+
+  document.getElementById("export").addEventListener("click", exportTrip);
+  document.getElementById("import").addEventListener("click", function () { $file.click(); });
+  $file.addEventListener("change", function () {
+    if ($file.files && $file.files[0]) importTrip($file.files[0]);
+    $file.value = "";   // let the same file be picked again
+  });
+
+  /* ---------- collapsing the entry section ---------- */
+  var COLLAPSE_KEY = "multiweather.itinCollapsed";
+  var $toggleItin = document.getElementById("toggle-itin");
+  var $itinBody = document.getElementById("itin-body");
+  var $itinTools = document.getElementById("itin-tools");
+  var $itinCount = document.getElementById("itin-count");
+
+  function itinOpen(){ return $toggleItin.getAttribute("aria-expanded") === "true"; }
+  function renderItinCount(){
+    var n = realLegs().length;
+    // Only label it when collapsed -- with the rows on screen the count is noise.
+    $itinCount.textContent = itinOpen() ? "" : n + " stop" + (n === 1 ? "" : "s");
+  }
+  function setItinOpen(open, persist){
+    $toggleItin.setAttribute("aria-expanded", String(open));
+    $itinBody.hidden = !open;
+    $itinTools.hidden = !open;
+    renderItinCount();
+    if (persist !== false) {
+      try { localStorage.setItem(COLLAPSE_KEY, open ? "0" : "1"); } catch (e) { /* not persisted */ }
+    }
+  }
+  $toggleItin.addEventListener("click", function () { setItinOpen(!itinOpen()); });
+
+  /* ---------- controls ---------- */
+  function focusLast(){
+    var rows = $legs.querySelectorAll(".leg input[type=text]");
+    if (rows.length) rows[rows.length - 1].focus();
+  }
+  document.getElementById("add").addEventListener("click", function () {
+    clearExample();
+    legs.push(newLeg("", "", ""));
+    save(); renderEditor(); render(); focusLast();
+  });
+  document.getElementById("clear").addEventListener("click", function () {
+    isExample = false;
+    legs = [newLeg("", "", "")];
+    fcCache = {}; fcErr = {};
+    save(); renderEditor(); render(); focusLast();
+  });
+  document.getElementById("sort").addEventListener("click", function () {
+    clearExample();
+    legs.sort(function (a, b) {
+      if (!a.start) return 1;
+      if (!b.start) return -1;
+      return a.start < b.start ? -1 : a.start > b.start ? 1 : 0;
+    });
+    save(); renderEditor(); render();
+  });
+  document.getElementById("refresh").addEventListener("click", function () {
+    fcCache = {}; fcErr = {}; normErr = {};   // keep normCache: normals stay valid
+    render();
+    scheduleRefresh(0);
+  });
+  function syncUnitButtons(){
+    document.getElementById("u-imp").setAttribute("aria-pressed", String(units === "imperial"));
+    document.getElementById("u-met").setAttribute("aria-pressed", String(units === "metric"));
+  }
+  function setUnits(u){
+    units = u;
+    syncUnitButtons();
+    save(); render();
+  }
+  document.getElementById("u-imp").addEventListener("click", function () { setUnits("imperial"); });
+  document.getElementById("u-met").addEventListener("click", function () { setUnits("metric"); });
+
+  /* ---------- boot ---------- */
+  loadNormals();
+  if (!load()) seedExample();
+  setUnits(units);
+  renderEditor();
+  var wasCollapsed = null;
+  try { wasCollapsed = localStorage.getItem(COLLAPSE_KEY); } catch (e) { /* default open */ }
+  // Never boot collapsed with nothing in it -- there would be no way back in.
+  setItinOpen(wasCollapsed !== "1" || !realLegs().length, false);
+  render();
+  scheduleRefresh(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "Trip Forecast Board",
+  "short_name": "Trip Board",
+  "description": "City-by-city forecasts and climate normals for a multi-stop trip.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F2F5F7",
+  "theme_color": "#12557E",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
