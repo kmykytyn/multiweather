@@ -1,13 +1,11 @@
 {
   "app": "trip-forecast-board",
   "version": 1,
-  "published": "2026-09-18T15:59:21-04:00",
+  "exported": "2026-09-18T20:02:38.992Z",
   "units": "imperial",
   "legs": [
     {
       "query": "charlotte",
-      "start": "2026-09-27",
-      "end": "2026-09-27",
       "place": {
         "id": 4460243,
         "name": "Charlotte",
@@ -19,12 +17,12 @@
         "population": 911311,
         "feature_code": "PPLA2",
         "timezone": "America/New_York"
-      }
+      },
+      "start": "2026-09-27",
+      "end": "2026-09-27"
     },
     {
-      "query": "Quebec City",
-      "start": "2026-09-24",
-      "end": "",
+      "query": "Québec City",
       "place": {
         "id": 6325494,
         "name": "Québec",
@@ -36,41 +34,128 @@
         "population": 531902,
         "feature_code": "PPLA",
         "timezone": "America/Toronto"
-      }
-    },
-    {
-      "query": "Reykjavik",
+      },
       "start": "2026-09-27",
-      "end": "2026-09-29",
-      "place": {
-        "id": 3413829,
-        "name": "Reykjavik",
-        "admin1": "Capital Region",
-        "country": "Iceland",
-        "country_code": "IS",
-        "latitude": 64.13548,
-        "longitude": -21.89541,
-        "population": 118918,
-        "feature_code": "PPLC",
-        "timezone": "Atlantic/Reykjavik"
-      }
+      "end": "2026-09-28"
     },
     {
-      "query": "Lisbon",
-      "start": "2026-10-12",
-      "end": "",
+      "query": "La Baie",
       "place": {
-        "id": 2267057,
-        "name": "Lisbon",
-        "admin1": "Lisbon District",
-        "country": "Portugal",
-        "country_code": "PT",
-        "latitude": 38.72509,
-        "longitude": -9.1498,
-        "population": 517802,
-        "feature_code": "PPLC",
-        "timezone": "Europe/Lisbon"
-      }
+        "id": 5994734,
+        "name": "La Baie",
+        "admin1": "Quebec",
+        "country": "Canada",
+        "country_code": "CA",
+        "latitude": 47.23562,
+        "longitude": -61.8715,
+        "feature_code": "PPL",
+        "timezone": "America/Halifax"
+      },
+      "start": "2026-09-29",
+      "end": "2026-09-29"
+    },
+    {
+      "query": "Sept-Îles",
+      "place": {
+        "id": 6144312,
+        "name": "Sept-Îles",
+        "admin1": "Quebec",
+        "country": "Canada",
+        "country_code": "CA",
+        "latitude": 50.20011,
+        "longitude": -66.38208,
+        "population": 28534,
+        "feature_code": "PPL",
+        "timezone": "America/Toronto"
+      },
+      "start": "2026-09-30",
+      "end": "2026-09-30"
+    },
+    {
+      "query": "Charlottetown",
+      "place": {
+        "id": 5920288,
+        "name": "Charlottetown",
+        "admin1": "Prince Edward Island",
+        "country": "Canada",
+        "country_code": "CA",
+        "latitude": 46.23459,
+        "longitude": -63.1256,
+        "population": 38809,
+        "feature_code": "PPLA",
+        "timezone": "America/Halifax"
+      },
+      "start": "2026-10-02",
+      "end": "2026-10-02"
+    },
+    {
+      "query": "Sydney",
+      "place": {
+        "id": 6354908,
+        "name": "Sydney",
+        "admin1": "Nova Scotia",
+        "country": "Canada",
+        "country_code": "CA",
+        "latitude": 46.1351,
+        "longitude": -60.1831,
+        "population": 105968,
+        "feature_code": "PPL",
+        "timezone": "America/Glace_Bay"
+      },
+      "start": "2026-10-03",
+      "end": "2026-10-03"
+    },
+    {
+      "query": "Halifax",
+      "place": {
+        "id": 6324729,
+        "name": "Halifax",
+        "admin1": "Nova Scotia",
+        "country": "Canada",
+        "country_code": "CA",
+        "latitude": 44.64269,
+        "longitude": -63.57688,
+        "population": 471559,
+        "feature_code": "PPLA",
+        "timezone": "America/Halifax"
+      },
+      "start": "2026-10-04",
+      "end": "2026-10-04"
+    },
+    {
+      "query": "Eastport",
+      "place": {
+        "id": 4963486,
+        "name": "Eastport",
+        "admin1": "Maine",
+        "country": "United States",
+        "country_code": "US",
+        "latitude": 44.90449,
+        "longitude": -66.98438,
+        "population": 1266,
+        "feature_code": "PPL",
+        "timezone": "America/New_York"
+      },
+      "start": "2026-10-05",
+      "end": "2026-10-05"
+    },
+    {
+      "query": "New York City",
+      "place": {
+        "id": 5128581,
+        "name": "New York",
+        "admin1": "New York",
+        "country": "United States",
+        "country_code": "US",
+        "latitude": 40.71427,
+        "longitude": -74.00597,
+        "population": 8804190,
+        "feature_code": "PPL",
+        "timezone": "America/New_York"
+      },
+      "start": "2026-10-07",
+      "end": "2026-10-07"
     }
-  ]
+  ],
+  "published": "2026-09-18T16:03:59-04:00"
 }
